@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- 맵핑될 DAO 인터페이스의 Full name 을 줍니다. -->
+<mapper namespace="com.tistory.pentode.service.dao.BoardDAO">
+
+	<!-- id 속성은 DAO 의 메소드와 같아야 한다. 여기의 boardVO 는 mybatis-confg.xml 에 Alias 되어 
+		있습니다. -->
+	<select id="selectBoardList" resultType="boardVO">
+		SELECT NUM
+		, NAME
+		, TITLE
+		, CONTENT
+		, READ_COUNT
+		, WRITE_DATE
+		FROM TEST_BOARD
+		ORDER BY NUM DESC
+	</select>
+
+	<insert id="insertBoard">
+		<selectKey resultType="int" keyProperty="num" order="BEFORE">
+			SELECT NVL(MAX(num),0)+1 FROM TEST_BOARD
+		</selectKey>
+		INSERT INTO TEST_BOARD (
+		NUM, NAME, TITLE, CONTENT, READ_COUNT, WRITE_DATE
+		) VALUES (
+		#{num}, #{name}, #{title}, #{content}, 0, SYSDATE
+		)
+	</insert>
+		
+	<select id="allMember" resultType="HashMap">
+		SELECT NUM
+		, NAME
+		, TITLE
+		, CONTENT
+		, READ_COUNT
+		, WRITE_DATE
+		FROM TEST_BOARD
+		ORDER BY NUM DESC
+	</select>
+
+<!--  기존  oracle은 이렇게 써야 한대... ㅠ_ㅠ  이건 pk값이 중복 안될때 가능하다!!
+	<insert id="insertExcel" parameterType="HashMap" >
+	<selectKey resultType="int" keyProperty="num" order="BEFORE">
+			SELECT TEST_BOARD_NO_SEQ.NEXTVAL as num FROM dual
+		</selectKey>
+    <foreach collection="excelContent" item="item" index="index" separator=" " open="INSERT ALL" close="SELECT * FROM DUAL">
+       into TEST_BOARD(
+          NUM, NAME, TITLE, CONTENT
+        )values
+       
+        (
+        	#{num},
+            #{item.A},
+            #{item.B},
+            #{item.C}
+        )
+        </foreach>
+  </insert>
+ -->
+
+	<!-- 다중 insert 시퀀스 사용 안하곤 더이상 못하겠다.. max에서 +1 하고싶었는데.. 안되나봐 -->
+	<insert id="insertExcel" parameterType="HashMap">
+		INSERT into TEST_BOARD(
+		NUM, NAME, TITLE, CONTENT
+		)
+		select TEST_BOARD_NO_SEQ.NEXTVAL,
+		A.*
+		from (
+		<foreach collection="excelContent" item="item" index="index" separator="UNION ALL">
+			select
+			#{item.A},
+			#{item.B},
+			#{item.C}
+			from dual
+		</foreach>
+		)A
+	</insert>
+     
+    <select id="selectMaxNum" resultType="String">
+    	SELECT NVL(MAX(num),0)+1 as num FROM TEST_BOARD
+    </select>
+
+</mapper>
+
+
